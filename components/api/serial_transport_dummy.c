@@ -27,7 +27,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
+#include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/uart.h"
@@ -92,7 +92,7 @@ s_receiveBytes(TMR_SR_SerialTransport *this, uint32_t length,
    * message. If the required number of bytes are note received in
    * timeoutMs milliseconds, it should return TMR_ERROR_TIMEOUT.
    */
-	int len = uart_read_bytes(UART_NUM_0, message, BUF_SIZE, 20 / portTICK_RATE_MS);
+	int len = uart_read_bytes(UART_NUM_1, message, BUF_SIZE, timeoutMs / portTICK_RATE_MS);
 	*messageLength = len;
 	if (len < length)
 		return TMR_ERROR_TIMEOUT;
@@ -133,8 +133,9 @@ s_shutdown(TMR_SR_SerialTransport *this)
   /* This routine should close the serial connection and release any
    * acquired resources.
    */
+	uart_driver_delete(UART_NUM_1);
 
-  return TMR_ERROR_UNIMPLEMENTED;
+  return TMR_SUCCESS;
 }
 
 static TMR_Status
@@ -172,14 +173,7 @@ TMR_SR_SerialTransportDummyInit(TMR_SR_SerialTransport *transport,
    * structure to store the information specific to the transport,
    * such as a file handle or the memory address of the FIFO.
    */
-  transport->cookie = other;
 
-  transport->open = s_open;
-  transport->sendBytes = s_sendBytes;
-  transport->receiveBytes = s_receiveBytes;
-  transport->setBaudRate = s_setBaudRate;
-  transport->shutdown = s_shutdown;
-  transport->flush = s_flush;
 
   return TMR_SUCCESS;
 }
@@ -196,6 +190,25 @@ TMR_SR_SerialTransportNativeInit(TMR_SR_SerialTransport *transport,
                                  TMR_SR_SerialPortNativeContext *context,
                                  const char *device)
 {
+  transport->cookie = context;
+
+  transport->open = s_open;
+  transport->sendBytes = s_sendBytes;
+  transport->receiveBytes = s_receiveBytes;
+  transport->setBaudRate = s_setBaudRate;
+  transport->shutdown = s_shutdown;
+  transport->flush = s_flush;
+
+#if TMR_MAX_SERIAL_DEVICE_NAME_LENGTH > 0
+  if (strlen(device) + 1 > TMR_MAX_SERIAL_DEVICE_NAME_LENGTH)
+  {
+    return TMR_ERROR_INVALID;
+  }
+  strcpy(context->devicename, device);
   return TMR_SUCCESS;
+#else
+  //return s_open(transport);
+  return TMR_SUCCESS;
+#endif
 }
 
