@@ -44,9 +44,11 @@ void checkerr(TMR_Reader* rp, TMR_Status ret, const char *msg)
 void app_main()
 {
 	TMR_Status ret;
-
-	int tagCount;
 	TMR_Reader reader, *preader;
+	TMR_Region region;
+	TMR_ReadPlan plan;
+	int tagCount;
+
 	preader = &reader;
 	//reader = (TMR_Reader *) malloc(sizeof(TMR_Reader));
 	ret = TMR_create(preader, "tmr:///");
@@ -55,14 +57,35 @@ void app_main()
 	ret = TMR_connect(preader);
 	checkerr(preader, ret, "Connecting reader");
 
+	// set region support 868mhz
+	region = TMR_REGION_EU3;
+	//region = TMR_REGION_IN;
+	ret = TMR_paramSet(preader, TMR_PARAM_REGION_ID, &region);
+	checkerr(preader, ret, "Setting region");
+
+	// Create simple plan using antenna 1
+	ret = TMR_RP_init_simple(&plan, 1, 1, TMR_TAG_PROTOCOL_GEN2, 1000);
+	checkerr(preader, ret, "Create plan");
+
 	ret = TMR_read(&reader, 1000, &tagCount);
 	checkerr(preader, ret, "Reading reader");
 
 	while (TMR_SUCCESS == TMR_hasMoreTags(&reader))
 	{
 		TMR_TagReadData trd;
+		char epcStr[128];
+
 		ret = TMR_getNextTag(&reader, &trd);
 		checkerr(preader, ret, "Next tag");
+
+//		TMR_bytesToHex(trd.tag.epc, trd.tag.epcByteCount, epcStr);
+//		printf("%s\n", epcStr);
+//		if (0 < trd.data.len)
+//		{
+//		  char dataStr[255];
+//		  TMR_bytesToHex(trd.data.list, trd.data.len, dataStr);
+//		  printf("  data(%d): %s\n", trd.data.len, dataStr);
+//		}
 	}
 
 	while(1)
