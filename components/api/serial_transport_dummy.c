@@ -60,9 +60,6 @@ s_open(TMR_SR_SerialTransport *this)
 	uart_set_pin(UART_NUM_1, ECHO_TEST_TXD, ECHO_TEST_RXD, ECHO_TEST_RTS, ECHO_TEST_CTS);
 	uart_driver_install(UART_NUM_1, BUF_SIZE * 2, 0, 0, NULL, 0);
 
-	 //Configure a temporary buffer for the incoming data
-	uint8_t *data = (uint8_t *) malloc(BUF_SIZE);
-
   return TMR_SUCCESS;
 }
 
@@ -92,7 +89,7 @@ s_receiveBytes(TMR_SR_SerialTransport *this, uint32_t length,
    * message. If the required number of bytes are note received in
    * timeoutMs milliseconds, it should return TMR_ERROR_TIMEOUT.
    */
-	int len = uart_read_bytes(UART_NUM_1, message, BUF_SIZE, timeoutMs / portTICK_RATE_MS);
+	int len = uart_read_bytes(UART_NUM_1, message, length, timeoutMs / portTICK_RATE_MS);
 	*messageLength = len;
 	if (len < length)
 		return TMR_ERROR_TIMEOUT;

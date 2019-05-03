@@ -47,6 +47,7 @@ void app_main()
 	TMR_Reader reader, *preader;
 	TMR_Region region;
 	TMR_ReadPlan plan;
+	uint8_t antennaList[1] = {1};
 	int tagCount;
 
 	preader = &reader;
@@ -64,33 +65,36 @@ void app_main()
 	checkerr(preader, ret, "Setting region");
 
 	// Create simple plan using antenna 1
-	ret = TMR_RP_init_simple(&plan, 1, 1, TMR_TAG_PROTOCOL_GEN2, 1000);
+	ret = TMR_RP_init_simple(&plan, 1, &antennaList, TMR_TAG_PROTOCOL_GEN2, 1000);
 	checkerr(preader, ret, "Create plan");
 
-	ret = TMR_read(&reader, 1000, &tagCount);
-	checkerr(preader, ret, "Reading reader");
-
-	while (TMR_SUCCESS == TMR_hasMoreTags(&reader))
-	{
-		TMR_TagReadData trd;
-		char epcStr[128];
-
-		ret = TMR_getNextTag(&reader, &trd);
-		checkerr(preader, ret, "Next tag");
-
-//		TMR_bytesToHex(trd.tag.epc, trd.tag.epcByteCount, epcStr);
-//		printf("%s\n", epcStr);
-//		if (0 < trd.data.len)
-//		{
-//		  char dataStr[255];
-//		  TMR_bytesToHex(trd.data.list, trd.data.len, dataStr);
-//		  printf("  data(%d): %s\n", trd.data.len, dataStr);
-//		}
-	}
+	/* Commit read plan */
+	ret = TMR_paramSet(preader, TMR_PARAM_READ_PLAN, &plan);
+	checkerr(preader, ret, "setting read plan");
 
 	while(1)
 	{
-		printf("testing\n");
+		ret = TMR_read(&reader, 1000, &tagCount);
+		checkerr(preader, ret, "Reading reader");
+
+		while (TMR_SUCCESS == TMR_hasMoreTags(&reader))
+		{
+			TMR_TagReadData trd;
+			char epcStr[128];
+
+			ret = TMR_getNextTag(&reader, &trd);
+			checkerr(preader, ret, "Next tag");
+
+			TMR_bytesToHex(trd.tag.epc, trd.tag.epcByteCount, epcStr);
+			printf("ecpstr: %s\n", epcStr);
+			if (0 < trd.data.len)
+			{
+			  char dataStr[255];
+			  TMR_bytesToHex(trd.data.list, trd.data.len, dataStr);
+			  printf("  data(%d): %s\n", trd.data.len, dataStr);
+			}
+		}
+		//printf("testing\n");
 		vTaskDelay(1000 / portTICK_PERIOD_MS);
 	}
 }
