@@ -344,6 +344,7 @@ TMR_reader_init_internal(struct TMR_Reader *reader)
   reader->subOffTime = 0;
   reader->tagFetchTime = 0;
 #endif
+  reader->subOffTime = 0;
   reader->continuousReading = false;
   reader->searchStatus = false;
   reader->fastSearch = false;
