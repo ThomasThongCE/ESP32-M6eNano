@@ -7,6 +7,8 @@
 
 #include <stdint.h>
 #include "osdep.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 
 uint32_t tmr_gettime_low()
@@ -14,7 +16,7 @@ uint32_t tmr_gettime_low()
   /* Fill in with code that returns the low 32 bits of a millisecond
    * counter. The API will not otherwise interpret the counter value.
    */
-  return 0;
+  return (esp_timer_get_time()/1000) & 0xffffffff;
 }
 
 uint32_t tmr_gettime_high()
@@ -23,7 +25,7 @@ uint32_t tmr_gettime_high()
    * counter. The API will not otherwise interpret the counter value.
    * Returning 0 is acceptable here if you do not have a large enough counter.
    */
-  return 0;
+  return ((esp_timer_get_time()/1000) >> 32) & 0xffffffff;
 }
 
 void
@@ -33,6 +35,7 @@ tmr_sleep(uint32_t sleepms)
    * Fill in with code that returns after at least sleepms milliseconds
    * have elapsed.
    */
+	vTaskDelay(sleepms / portTICK_PERIOD_MS);
 }
 
 TMR_TimeStructure
