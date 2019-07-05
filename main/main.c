@@ -16,13 +16,14 @@
 #define ECHO_TEST_RXD  (GPIO_NUM_3)
 #define ECHO_TEST_RTS  (UART_PIN_NO_CHANGE)
 #define ECHO_TEST_CTS  (UART_PIN_NO_CHANGE)
-#define FILTER
-#define WRITE_EPC
+//#define FILTER
+//#define WRITE_EPC
 
 
 uint8_t myEPC[12]; //Most EPCs are 12 bytes
 int myEPClength;
 int responseType = 0;
+static uint32_t maxPower, minPower, readPower, writePower; 
 
 void checkerr(TMR_Reader* rp, TMR_Status ret, const char *msg)
 {
@@ -55,8 +56,22 @@ void app_main()
 		ret = TMR_connect(preader);
 		checkerr(preader, ret, "Connecting reader");
 	}while (TMR_SUCCESS != ret);
-	// set region support 868mhz
+	
+	// get max power and min power
+	ret = TMR_paramGet(preader, TMR_PARAM_RADIO_POWERMAX, &maxPower);
+	checkerr(preader, ret, "Getting power max");
+	ret = TMR_paramGet(preader, TMR_PARAM_RADIO_POWERMIN, &minPower);
+	checkerr(preader, ret, "Getting power min");
+	printf("maxpower: %d, minpower: %d\n", maxPower, minPower);
 
+	// get current read and write power
+	ret = TMR_paramGet(preader, TMR_PARAM_RADIO_READPOWER, &readPower);
+	checkerr(preader, ret, "Getting current read power");
+	ret = TMR_paramGet(preader, TMR_PARAM_RADIO_WRITEPOWER, &writePower);
+	checkerr(preader, ret, "Getting current write power");
+	printf("readpower: %d, writepower: %d\n", readPower, writePower);
+
+	// set region support 868mhz
 	region = TMR_REGION_EU3;
 	ret = TMR_paramSet(preader, TMR_PARAM_REGION_ID, &region);
 	checkerr(preader, ret, "Setting region");
@@ -200,6 +215,7 @@ void app_main()
 		ret = TMR_paramSet(preader, TMR_PARAM_READ_PLAN, &plan);
 		checkerr(preader, ret, "commit read plan");	
 		#endif
+
 		vTaskDelay(1000 / portTICK_PERIOD_MS);
 	}
 

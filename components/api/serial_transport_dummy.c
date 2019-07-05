@@ -34,7 +34,7 @@
 #include "driver/gpio.h"
 #include "tm_reader.h"
 
-#define BUF_SIZE (1024)
+#define BUF_SIZE (2048)
 //#define ECHO_TEST_TXD  (GPIO_NUM_1)
 //#define ECHO_TEST_RXD  (GPIO_NUM_3)
 #define ECHO_TEST_TXD  (GPIO_NUM_10)
@@ -56,9 +56,9 @@ s_open(TMR_SR_SerialTransport *this)
 		.stop_bits = UART_STOP_BITS_1,
 		.flow_ctrl = UART_HW_FLOWCTRL_DISABLE
 	};
-	uart_param_config(UART_NUM_1, &uart_config);
-	uart_set_pin(UART_NUM_1, ECHO_TEST_TXD, ECHO_TEST_RXD, ECHO_TEST_RTS, ECHO_TEST_CTS);
-	uart_driver_install(UART_NUM_1, BUF_SIZE * 2, 0, 0, NULL, 0);
+	ESP_ERROR_CHECK(uart_param_config(UART_NUM_1, &uart_config));
+	ESP_ERROR_CHECK(uart_set_pin(UART_NUM_1, ECHO_TEST_TXD, ECHO_TEST_RXD, ECHO_TEST_RTS, ECHO_TEST_CTS));
+	ESP_ERROR_CHECK(uart_driver_install(UART_NUM_1, BUF_SIZE * 2, BUF_SIZE * 2, 0, NULL, 0));
 
   return TMR_SUCCESS;
 }
