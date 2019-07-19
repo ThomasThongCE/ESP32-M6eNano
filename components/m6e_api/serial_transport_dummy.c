@@ -37,8 +37,8 @@
 #define BUF_SIZE (2048)
 //#define ECHO_TEST_TXD  (GPIO_NUM_1)
 //#define ECHO_TEST_RXD  (GPIO_NUM_3)
-#define ECHO_TEST_TXD  (GPIO_NUM_10)
-#define ECHO_TEST_RXD  (GPIO_NUM_9)
+#define ECHO_TEST_TXD  (GPIO_NUM_17)
+#define ECHO_TEST_RXD  (GPIO_NUM_16)
 #define ECHO_TEST_RTS  (UART_PIN_NO_CHANGE)
 #define ECHO_TEST_CTS  (UART_PIN_NO_CHANGE)
 /* Stub implementation of serial transport layer routines. */
@@ -56,9 +56,9 @@ s_open(TMR_SR_SerialTransport *this)
 		.stop_bits = UART_STOP_BITS_1,
 		.flow_ctrl = UART_HW_FLOWCTRL_DISABLE
 	};
-	ESP_ERROR_CHECK(uart_param_config(UART_NUM_1, &uart_config));
-	ESP_ERROR_CHECK(uart_set_pin(UART_NUM_1, ECHO_TEST_TXD, ECHO_TEST_RXD, ECHO_TEST_RTS, ECHO_TEST_CTS));
-	ESP_ERROR_CHECK(uart_driver_install(UART_NUM_1, BUF_SIZE * 2, BUF_SIZE * 2, 0, NULL, 0));
+	ESP_ERROR_CHECK(uart_param_config(UART_NUM_2, &uart_config));
+	ESP_ERROR_CHECK(uart_set_pin(UART_NUM_2, ECHO_TEST_TXD, ECHO_TEST_RXD, ECHO_TEST_RTS, ECHO_TEST_CTS));
+	ESP_ERROR_CHECK(uart_driver_install(UART_NUM_2, BUF_SIZE * 2, BUF_SIZE * 2, 0, NULL, 0));
 
   return TMR_SUCCESS;
 }
@@ -73,7 +73,7 @@ s_sendBytes(TMR_SR_SerialTransport *this, uint32_t length,
    * the serial connection. If the transmission does not complete in
    * timeoutMs milliseconds, it should return TMR_ERROR_TIMEOUT.
    */
-	uart_write_bytes(UART_NUM_1, (const char *) message, length);
+	uart_write_bytes(UART_NUM_2, (const char *) message, length);
 
 	return TMR_SUCCESS;
 }
@@ -89,7 +89,7 @@ s_receiveBytes(TMR_SR_SerialTransport *this, uint32_t length,
    * message. If the required number of bytes are note received in
    * timeoutMs milliseconds, it should return TMR_ERROR_TIMEOUT.
    */
-	int len = uart_read_bytes(UART_NUM_1, message, length, timeoutMs / portTICK_RATE_MS);
+	int len = uart_read_bytes(UART_NUM_2, message, length, timeoutMs / portTICK_RATE_MS);
 	*messageLength = len;
 	if (len < length)
 		return TMR_ERROR_TIMEOUT;
@@ -110,7 +110,7 @@ s_setBaudRate(TMR_SR_SerialTransport *this, uint32_t rate)
 			.flow_ctrl = UART_HW_FLOWCTRL_DISABLE
 		};
 
-	ret = uart_param_config(UART_NUM_1, &uart_config);
+	ret = uart_param_config(UART_NUM_2, &uart_config);
 	if (ret == ESP_FAIL)
 		return TMR_ERROR_INVALID;
 	return TMR_SUCCESS;
@@ -130,7 +130,7 @@ s_shutdown(TMR_SR_SerialTransport *this)
   /* This routine should close the serial connection and release any
    * acquired resources.
    */
-	uart_driver_delete(UART_NUM_1);
+	uart_driver_delete(UART_NUM_2);
 
   return TMR_SUCCESS;
 }
@@ -138,7 +138,7 @@ s_shutdown(TMR_SR_SerialTransport *this)
 static TMR_Status
 s_flush(TMR_SR_SerialTransport *this)
 {
-	uart_flush(UART_NUM_1);
+	uart_flush(UART_NUM_2);
 	return TMR_SUCCESS;
   /* This routine should empty any input or output buffers in the
    * communication channel. If there are no such buffers, it may do

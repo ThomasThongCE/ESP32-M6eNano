@@ -57,6 +57,7 @@ void hwGetTag()
 {
     TMR_Status ret;
     int32_t tagCount;
+    EventBits_t uxBits;
 
     while(1)
     {
@@ -68,7 +69,9 @@ void hwGetTag()
         xSemaphoreTake(mutex, portMAX_DELAY);
         while(1)
         {
-            xEventGroupWaitBits(eventGroup, STOP_GET_TAG, pdTRUE, pdFALSE, 0);
+        	uxBits = xEventGroupWaitBits(eventGroup, STOP_GET_TAG, pdTRUE, pdFALSE, 0);
+        	if ((uxBits & STOP_GET_TAG) == STOP_GET_TAG)
+        		break;
             do {
                 ret = TMR_read(rp, 1000, &tagCount);
                 checkerr(rp, ret, "Reading reader");
