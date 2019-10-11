@@ -1,3 +1,5 @@
-PROJECT_NAME := Mecury_v2
+PROJECT_NAME := Bluetooth
+
+COMPONENT_ADD_INCLUDEDIRS := components/include
 
 include $(IDF_PATH)/make/project.mk
