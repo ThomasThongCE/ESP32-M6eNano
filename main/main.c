@@ -26,6 +26,8 @@
 #include "time.h"
 #include "sys/time.h"
 
+// #define DEBUG
+
 #define SPP_TAG "SPP_ACCEPTOR_DEMO"
 #define SPP_SERVER_NAME "SPP_SERVER"
 #define EXCAMPLE_DEVICE_NAME "ANDROID UHF"
@@ -42,14 +44,15 @@ static long data_num = 0;
 static const esp_spp_sec_t sec_mask = ESP_SPP_SEC_AUTHENTICATE;
 static const esp_spp_role_t role_slave = ESP_SPP_ROLE_SLAVE;
 
-uint8_t SPP_DATA_LEN = 14;
-uint8_t spp_data[] = "NguyenTranKha\0";
-
 //Control RFID
 volatile uint32_t temp = 0;
-volatile uint8_t control;
+volatile uint8_t control, flag = true;
 
 void getTag();
+void sendBluetoothString(char *data);
+void sendBluetoothData(uint32_t len, unsigned char*data);
+void sendBluetooth(uint32_t len, unsigned char* data);
+void endPackage();
 
 static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
 {
@@ -57,7 +60,7 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
     case ESP_SPP_INIT_EVT:
         ESP_LOGI(SPP_TAG, "ESP_SPP_INIT_EVT");
         esp_bt_dev_set_device_name(EXCAMPLE_DEVICE_NAME);
-        esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
+        esp_bt_gap_set_scan_mode(ESP_BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE);
         esp_spp_start_srv(sec_mask,role_slave, 0, SPP_SERVER_NAME);
         break;
     case ESP_SPP_DISCOVERY_COMP_EVT:
@@ -83,8 +86,17 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
                  param->data_ind.len, param->data_ind.handle);
         esp_log_buffer_hex("",param->data_ind.data,param->data_ind.len);
         control = *param->data_ind.data;
-        if(control == 115) xEventGroupSetBits(eventGroup, GET_TAG);
-        else xEventGroupSetBits(eventGroup, STOP_GET_TAG);
+        switch (control)
+        {
+            case 'a':
+                xEventGroupSetBits(eventGroup, GET_TAG);
+                break;
+            case 'b':
+                xEventGroupSetBits(eventGroup, STOP_GET_TAG);
+                break;
+            default:
+                break;
+        }
 //        printf("%d", control);
 //        ESP_LOGI(SPP_TAG, "ESP_RECEIVE_ANDROID DATA=%d",
 //                         control);
@@ -101,7 +113,8 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
         ESP_LOGI(SPP_TAG, "ESP_SPP_CONG_EVT");
         break;
     case ESP_SPP_WRITE_EVT:
-        ESP_LOGI(SPP_TAG, "ESP_SPP_WRITE_EVT");
+        // ESP_LOGI(SPP_TAG, "ESP_SPP_WRITE_EVT");
+        flag = true;
         break;
     case ESP_SPP_SRV_OPEN_EVT:
         ESP_LOGI(SPP_TAG, "ESP_SPP_SRV_OPEN_EVT");
@@ -217,14 +230,17 @@ void app_main()
 	hwTaskInit();
     InitDevice();
 
-    xTaskCreate(&getTag,"getTag",2048,NULL,10,NULL);
+    xTaskCreate(&getTag,"getTag",4096,NULL,10,NULL);
+    // xEventGroupSetBits(eventGroup, GET_TAG);
 //    xEventGroupSetBits(eventGroup, GET_TAG);
 }
 
 void getTag()
 {
-	char epcStr[128], dataStr[128];
+	char epcStr[128], dataStr[128], newLine[2];
 	TMR_TagReadData *trd;
+    newLine[0] = '\n';
+    newLine[1] = '\r';
 
 	while(1)
 	{
@@ -233,19 +249,119 @@ void getTag()
 			xQueueReceive(getTagQueue, &trd, portMAX_DELAY);
 			printf("data received\n");
 
-			TMR_bytesToHex(trd->tag.epc, trd->tag.epcByteCount, epcStr);
-			epcStr [trd->tag.epcByteCount] = '\0';
-			esp_spp_write(temp, trd->tag.epcByteCount + 1, (unsigned char *)epcStr);
-			printf("\necpstr: %s, freq: %d, Rssi: %d\n", epcStr, trd->frequency, trd->rssi );
+            printf("----------------------------------------\r\n");
 
-			// if (0 < trd->data.len)
-			// {
-			// 	TMR_bytesToHex(trd->data.list, trd->data.len, dataStr);
-			// 	printf("  data(%d): %s\n", trd->data.len, dataStr);
-			// }
+			TMR_bytesToHex(trd->tag.epc, trd->tag.epcByteCount, epcStr);
+            sendBluetoothString("epc byte: ");
+            sendBluetoothData(trd->tag.epcByteCount, (unsigned char *)epcStr);
+            sendBluetoothString("\r\n");
+            printf("ecpstr: %s, freq: %d, Rssi: %d\n", epcStr, trd->frequency, trd->rssi );
+
+            printf("data len: %d\r\n", trd->data.len);
+            printf("userMemData len: %d\r\n", trd->userMemData.len);
+            printf("epcMemData len: %d\r\n", trd->epcMemData.len);
+            printf("reservedMemData len: %d\r\n", trd->reservedMemData.len);
+            printf("tidMemData len: %d\r\n", trd->tidMemData.len);
+
+            printf("number of time tag read: %d\r\n", trd->readCount);
+
+            if (0 < trd->data.len)
+            {
+                printf("inside data\r\n");
+                TMR_bytesToHex(trd->data.list, trd->data.len, dataStr);
+                printf("  data(%d): %s\n", trd->data.len, dataStr);
+
+                sendBluetoothString("data: ");
+                sendBluetoothData(trd->data.len*2, (unsigned char *)dataStr);
+                sendBluetoothString("\r\n");
+            }
+
+            if (0 < trd->userMemData.len)
+            {
+                printf ("inside userMemData \r\n");
+                TMR_bytesToHex(trd->userMemData.list, trd->userMemData.len, dataStr);
+                printf("  userMemData(%d): %s\n", trd->userMemData.len, dataStr);
+
+                sendBluetoothString("userMemData: ");
+                sendBluetoothData(trd->userMemData.len*2, (unsigned char *)dataStr);
+                sendBluetoothString("\r\n");
+            }
+
+            if (0 < trd->epcMemData.len)
+            {
+                printf ("inside epcMemData \r\n");
+                TMR_bytesToHex(trd->epcMemData.list, trd->epcMemData.len, dataStr);
+                printf("  epcMemData(%d): %s\n", trd->epcMemData.len, dataStr);
+
+                sendBluetoothString("epcMemData: ");
+                sendBluetoothData(trd->epcMemData.len*2, (unsigned char *)dataStr);
+                sendBluetoothString("\r\n");
+            }
+
+            if (0 < trd->reservedMemData.len)
+            {
+                printf ("inside reservedMemData \r\n");
+                TMR_bytesToHex(trd->reservedMemData.list, trd->reservedMemData.len, dataStr);
+                printf("  reservedMemData(%d): %s\n", trd->reservedMemData.len, dataStr);
+
+                sendBluetoothString("reservedMemData: ");
+                sendBluetoothData(trd->reservedMemData.len*2, (unsigned char *)dataStr);
+                sendBluetoothString("\r\n");
+            }
+
+            if (0 < trd->tidMemData.len)
+            {
+                printf ("inside tidmemdata \r\n");
+                TMR_bytesToHex(trd->tidMemData.list, trd->tidMemData.len, dataStr);
+                printf("  tidMemData(%d): %s\n", trd->tidMemData.len, dataStr);
+
+                sendBluetoothString("tidMemData: ");
+                sendBluetoothData(trd->tidMemData.len*2, (unsigned char *)dataStr);
+                sendBluetoothString("\r\n");
+            }
 
 			destroyTagdata(trd);
+
+            printf ("\r\n");
+
+            sendBluetoothString("\r\n\r\n");
+            endPackage();
 		}
 		vTaskDelay(1000 / portTICK_PERIOD_MS);
 	}
+}
+
+void sendBluetoothString(char *data)
+{
+    #ifdef DEBUG
+    sendBluetooth(strlen(data),(unsigned char *) data);
+    #endif
+}
+
+void sendBluetoothData(uint32_t len, unsigned char *data)
+{
+    uint8_t i = 0;
+    for (; len > 10 ; len -= 10, ++i)
+    {
+        sendBluetooth(10, data+(10*i));
+    }
+
+    sendBluetooth (len, data+(10*i));
+    sendBluetooth (1, (unsigned char*) "\0");
+
+    vTaskDelay(10 / portTICK_PERIOD_MS);
+}
+
+void endPackage()
+{
+    sendBluetooth (1, (unsigned char*) "\n");
+}
+
+void sendBluetooth(uint32_t len, unsigned char* data)
+{
+    flag = false;
+    if (NULL != temp)
+        esp_spp_write(temp, len, data);
+
+    while (!flag);
 }
