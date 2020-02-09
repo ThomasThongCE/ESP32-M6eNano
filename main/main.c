@@ -247,9 +247,9 @@ void getTag()
 		while(1)
 		{
 			xQueueReceive(getTagQueue, &trd, portMAX_DELAY);
-			printf("data received\n");
+			// printf("data received\n");
 
-            printf("----------------------------------------\r\n");
+            // printf("----------------------------------------\r\n");
 
 			TMR_bytesToHex(trd->tag.epc, trd->tag.epcByteCount, epcStr);
             sendBluetoothString("epc byte: ");
@@ -257,19 +257,19 @@ void getTag()
             sendBluetoothString("\r\n");
             printf("ecpstr: %s, freq: %d, Rssi: %d\n", epcStr, trd->frequency, trd->rssi );
 
-            printf("data len: %d\r\n", trd->data.len);
-            printf("userMemData len: %d\r\n", trd->userMemData.len);
-            printf("epcMemData len: %d\r\n", trd->epcMemData.len);
-            printf("reservedMemData len: %d\r\n", trd->reservedMemData.len);
-            printf("tidMemData len: %d\r\n", trd->tidMemData.len);
+            // printf("data len: %d\r\n", trd->data.len);
+            // printf("userMemData len: %d\r\n", trd->userMemData.len);
+            // printf("epcMemData len: %d\r\n", trd->epcMemData.len);
+            // printf("reservedMemData len: %d\r\n", trd->reservedMemData.len);
+            // printf("tidMemData len: %d\r\n", trd->tidMemData.len);
 
             printf("number of time tag read: %d\r\n", trd->readCount);
 
             if (0 < trd->data.len)
             {
-                printf("inside data\r\n");
+                // printf("inside data\r\n");
                 TMR_bytesToHex(trd->data.list, trd->data.len, dataStr);
-                printf("  data(%d): %s\n", trd->data.len, dataStr);
+                // printf("  data(%d): %s\n", trd->data.len, dataStr);
 
                 sendBluetoothString("data: ");
                 sendBluetoothData(trd->data.len*2, (unsigned char *)dataStr);
@@ -278,9 +278,9 @@ void getTag()
 
             if (0 < trd->userMemData.len)
             {
-                printf ("inside userMemData \r\n");
+                // printf ("inside userMemData \r\n");
                 TMR_bytesToHex(trd->userMemData.list, trd->userMemData.len, dataStr);
-                printf("  userMemData(%d): %s\n", trd->userMemData.len, dataStr);
+                // printf("  userMemData(%d): %s\n", trd->userMemData.len, dataStr);
 
                 sendBluetoothString("userMemData: ");
                 sendBluetoothData(trd->userMemData.len*2, (unsigned char *)dataStr);
@@ -289,9 +289,9 @@ void getTag()
 
             if (0 < trd->epcMemData.len)
             {
-                printf ("inside epcMemData \r\n");
+                // printf ("inside epcMemData \r\n");
                 TMR_bytesToHex(trd->epcMemData.list, trd->epcMemData.len, dataStr);
-                printf("  epcMemData(%d): %s\n", trd->epcMemData.len, dataStr);
+                // printf("  epcMemData(%d): %s\n", trd->epcMemData.len, dataStr);
 
                 sendBluetoothString("epcMemData: ");
                 sendBluetoothData(trd->epcMemData.len*2, (unsigned char *)dataStr);
@@ -300,9 +300,9 @@ void getTag()
 
             if (0 < trd->reservedMemData.len)
             {
-                printf ("inside reservedMemData \r\n");
+                // printf ("inside reservedMemData \r\n");
                 TMR_bytesToHex(trd->reservedMemData.list, trd->reservedMemData.len, dataStr);
-                printf("  reservedMemData(%d): %s\n", trd->reservedMemData.len, dataStr);
+                // printf("  reservedMemData(%d): %s\n", trd->reservedMemData.len, dataStr);
 
                 sendBluetoothString("reservedMemData: ");
                 sendBluetoothData(trd->reservedMemData.len*2, (unsigned char *)dataStr);
@@ -311,9 +311,9 @@ void getTag()
 
             if (0 < trd->tidMemData.len)
             {
-                printf ("inside tidmemdata \r\n");
+                // printf ("inside tidmemdata \r\n");
                 TMR_bytesToHex(trd->tidMemData.list, trd->tidMemData.len, dataStr);
-                printf("  tidMemData(%d): %s\n", trd->tidMemData.len, dataStr);
+                // printf("  tidMemData(%d): %s\n", trd->tidMemData.len, dataStr);
 
                 sendBluetoothString("tidMemData: ");
                 sendBluetoothData(trd->tidMemData.len*2, (unsigned char *)dataStr);
