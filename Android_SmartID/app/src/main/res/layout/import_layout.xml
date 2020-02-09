@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/background"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:id="@+id/layout_cover_pay"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+        <android.support.v7.widget.Toolbar
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/title_toolbar"
+            android:background="@drawable/background">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/title_toolbar"
+                android:layout_gravity="center"
+                android:textColor="@color/colorTextToolBar"
+                android:textSize="30sp"
+                android:textStyle="bold"
+                android:drawableStart = "@drawable/ic_ce"/>
+        </android.support.v7.widget.Toolbar>
+        <LinearLayout
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="45dp"
+                android:background="#55000000"
+                android:textColor="@color/colorIconWhilte"
+                android:text="Nhập Liệu"
+                android:gravity="center"
+                android:textSize="20sp"
+                android:layout_marginTop="10sp"
+                android:layout_marginBottom="10sp"
+                android:textStyle="bold"/>
+        </LinearLayout>
+        <TextView
+            android:id="@+id/cooldown"
+            android:layout_width="match_parent"
+            android:gravity="center"
+            android:textStyle="italic"
+            android:textColor="@color/colorTextWhite"
+            android:textSize="15dp"
+            android:layout_height="match_parent"/>
+    </LinearLayout>
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/title_toolbar"
+        android:background="@drawable/background">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/title_toolbar"
+            android:layout_gravity="center"
+            android:id="@+id/toolbar_title"
+            android:textColor="@color/colorTextToolBar"
+            android:textSize="30sp"
+            android:textStyle="bold"
+            android:drawableStart = "@drawable/ic_ce"/>
+    </android.support.v7.widget.Toolbar>
+
+    <LinearLayout
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:background="#55000000"
+            android:textColor="@color/colorIconWhilte"
+            android:text="Nhập Liệu"
+            android:gravity="center"
+            android:textSize="20sp"
+            android:layout_marginTop="10sp"
+            android:layout_marginBottom="10sp"
+            android:textStyle="bold"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:orientation="vertical">
+            <android.support.v7.widget.LinearLayoutCompat
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <android.support.v7.widget.LinearLayoutCompat
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1">
+
+                    <android.support.v7.widget.AppCompatTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:gravity="center|left"
+                        android:text="@string/ID"
+                        android:textColor="@color/colorTextWhite"
+                        android:textSize="15sp"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:id="@+id/ID"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_weight="3"
+                        android:gravity="center|right"
+                        android:textColor="@color/colorTextWhite"
+                        android:textSize="15sp" />
+                </android.support.v7.widget.LinearLayoutCompat>
+
+                <Button
+                    android:id="@+id/ReadID"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="3"
+                    android:padding="5sp"
+                    android:text="@string/Read"
+                    android:textColor="@color/colorTextWhite"
+                    android:background="@drawable/button" />
+            </android.support.v7.widget.LinearLayoutCompat>
+
+            <android.support.v7.widget.LinearLayoutCompat
+                android:layout_width="match_parent"
+                android:layout_marginTop="10dp"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <android.support.v7.widget.AppCompatTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:gravity="center|right"
+                    android:text="@string/weight"
+                    android:textColor="@color/colorTextWhite"
+                    android:textSize="15sp"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:gravity="center"
+                    android:text="0 gram"
+                    android:id="@+id/weight"
+                    android:layout_weight="2"
+                    android:textColor="@color/colorTextWhite"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+
+                <Button
+                    android:id="@+id/ReadScale"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="3"
+                    android:padding="5sp"
+                    android:text="Cân"
+                    android:textColor="@color/colorTextWhite"
+                    android:background="@drawable/button" />
+            </android.support.v7.widget.LinearLayoutCompat>
+
+            <android.support.v7.widget.LinearLayoutCompat
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal">
+
+                <android.support.v7.widget.AppCompatTextView
+                    android:layout_width="120dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center|right"
+                    android:text="@string/NameProduct"
+                    android:textStyle="bold"
+                    android:textColor="@color/colorTextWhite"
+                    android:textSize="15sp" />
+
+                <EditText
+                    android:id="@+id/name"
+                    android:layout_width="match_parent"
+                    android:textColor="@color/colorTextWhite"
+                    android:layout_height="match_parent" />
+            </android.support.v7.widget.LinearLayoutCompat>
+
+            <android.support.v7.widget.LinearLayoutCompat
+                android:layout_width="match_parent"
+                android:layout_marginTop="10dp"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <android.support.v7.widget.AppCompatTextView
+                    android:layout_width="120dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center|right"
+                    android:text="@string/price"
+                    android:textColor="@color/colorTextWhite"
+                    android:textSize="15sp"
+                    android:textStyle="bold"/>
+
+                <EditText
+                    android:id="@+id/price"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:textColor="@color/colorTextWhite"/>
+            </android.support.v7.widget.LinearLayoutCompat>
+
+            <Button
+                android:id="@+id/confirm"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/SaveDatabase"
+                android:textColor="@color/colorTextWhite"
+                android:background="@drawable/confirm_buy" />
+        </LinearLayout>
+    </LinearLayout>
+</android.support.v7.widget.LinearLayoutCompat>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:background="@drawable/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/title_toolbar"
+        android:background="@drawable/background">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/title_toolbar"
+            android:layout_gravity="center"
+            android:id="@+id/toolbar_title"
+            android:textColor="@color/colorTextToolBar"
+            android:textSize="30sp"
+            android:textStyle="bold"
+            android:drawableStart = "@drawable/ic_ce"/>
+    </android.support.v7.widget.Toolbar>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="45dp"
+        android:background="#55000000"
+        android:textColor="@color/colorIconWhilte"
+        android:text="@string/title_bluetooth_Scale"
+        android:gravity="center"
+        android:textSize="20sp"
+        android:layout_marginTop="10sp"
+        android:layout_marginBottom="10sp"
+        android:textStyle="bold"/>
+    <ListView
+        android:id="@+id/listBluetooth"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"
+        android:text="@string/title_toolbar"
+        android:divider="#00000000"/>
+    <Button
+        android:id="@+id/Refresh_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10sp"
+        android:layout_marginBottom="10sp"
+        android:layout_marginRight="50dp"
+        android:layout_marginLeft="50dp"
+        android:text="REFRESH"
+        android:textStyle="bold"
+        android:background="@drawable/button"
+        android:textColor="@color/colorIconWhilte"/>
+</LinearLayout>
