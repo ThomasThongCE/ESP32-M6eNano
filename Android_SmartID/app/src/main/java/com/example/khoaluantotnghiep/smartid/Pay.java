@@ -5,10 +5,9 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.database.Cursor;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -52,6 +51,8 @@ public class Pay extends AppCompatActivity {
     ArrayList<Product> ListProductScan = new ArrayList<>();
     ArrayList<bluetooth> ListBluetooth = new ArrayList<>();
     ArrayList<String> ListID = new ArrayList<>();
+    ArrayList<String> ListNameSP = new ArrayList<>();
+    ArrayList<String> ListIDDatabase = new ArrayList<>();
     Cursor cursor;
     int SumProduct = 0;
     float SumScale = 0;
@@ -112,7 +113,7 @@ public class Pay extends AppCompatActivity {
             public void run() {
                 thread.run();
             }
-        },5000);
+        }, 5000);
 
         cover.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -123,7 +124,7 @@ public class Pay extends AppCompatActivity {
                     public void run() {
                         thread.run();
                     }
-                },5000);
+                }, 5000);
             }
         });
         confirm = findViewById(R.id.confirm);
@@ -138,7 +139,7 @@ public class Pay extends AppCompatActivity {
 
 
         cursor = databaseUHF.getAllSANPHAM();
-        try{
+        try {
             do {
                 cursor.moveToNext();
                 Product product = new Product();
@@ -147,8 +148,10 @@ public class Pay extends AppCompatActivity {
                 product.setGia(Integer.parseInt(cursor.getString(cursor.getColumnIndex(databaseUHF.KEY_GIA))));
                 product.setCanNang(Float.parseFloat(cursor.getString(cursor.getColumnIndex(databaseUHF.KEY_CANNANG))));
                 ListProductDB.add(product);
+                ListIDDatabase.add(product.getMaSp().trim());
+                Log.e("Base", product.getMaSp().trim());
             } while (!cursor.isLast());
-        }catch (Exception e){
+        } catch (Exception e) {
             Toast.makeText(getApplicationContext(), "Database Trống", Toast.LENGTH_LONG).show();
         }
 
@@ -168,15 +171,14 @@ public class Pay extends AppCompatActivity {
         scale.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                try{
+                try {
                     thread1.run();
                     controllerBluetooth_Scale.sendData("c");
                     scale.setEnabled(false);
                     scale.setBackground(getResources().getDrawable(R.drawable.background_content));
                     scale.setText("Đang Kiểm Tra...");
-                }
-                catch (Exception e){
-                    Log.e("scale" , e.toString());
+                } catch (Exception e) {
+                    Log.e("scale", e.toString());
                     Log.e("Loi", "Khong gui duoc");
                 }
             }
@@ -201,8 +203,9 @@ public class Pay extends AppCompatActivity {
                         scan.setText("Quét");
                         scan.setBackground(getResources().getDrawable(R.drawable.button));
                         Toast.makeText(Pay.this, "Quét Xong", Toast.LENGTH_SHORT).show();
+                        ThanhToan();
                     }
-                },10000);
+                }, 5000);
             }
         });
 
@@ -211,8 +214,11 @@ public class Pay extends AppCompatActivity {
             public void onClick(View view) {
                 numberPay.setText("0 VNĐ");
                 numberScale.setText("0 Kg");
+                SumScale = 0;
+                SumProduct = 0;
                 listProduct.clear();
                 ListID.clear();
+                ListNameSP.clear();
                 ListProductScan.clear();
                 ArrayAdapter adapter = new ArrayAdapter(Pay.this, android.R.layout.simple_list_item_1, listProduct);
                 listViewProduct.setAdapter(adapter);
@@ -228,7 +234,7 @@ public class Pay extends AppCompatActivity {
                 databaseUHF.open();
                 int i = ListID.size() - 1;
 
-                while(i >= 0){
+                while (i >= 0) {
                     Log.d("kha", "123");
                     databaseUHF.deleteSANPHAM(ListID.get(i));
                     i--;
@@ -244,7 +250,7 @@ public class Pay extends AppCompatActivity {
                     public void run() {
                         finish();
                     }
-                },2000);
+                }, 2000);
 
             }
         });
@@ -276,78 +282,11 @@ public class Pay extends AppCompatActivity {
 
             @Override
             public void receiveData(final String data) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Log.e("TagID", data);
-                        for(int i = 0; i < ListProductDB.size(); i++)
-                        {
-                            Log.e("Data", data);
-                            Log.e("BD", ListProductDB.get(i).getMaSp());
-                            if(ListProductDB.get(i).getMaSp().equals(data) && !ListID.contains(ListProductDB.get(i).getMaSp())) {
-                                ListID.add(ListProductDB.get(i).getMaSp());
-                                if (ListProductScan.isEmpty()) {
-                                    Product product = new Product();
-                                    product.setMaSp(ListProductDB.get(i).getMaSp());
-                                    product.setTenSp(ListProductDB.get(i).getTenSp());
-                                    product.setGia(ListProductDB.get(i).getGia());
-                                    product.setCanNang(ListProductDB.get(i).getCanNang());
-                                    product.setSoluong(product.getSoluong() + 1);
-                                    ListProductScan.add(product);
-                                    Log.e("status", "1");
-                                    Apdater_Pay apdater_pay = new Apdater_Pay(Pay.this, R.layout.custom_listview, ListProductScan);
-                                    listViewProduct.setAdapter(apdater_pay);
-                                    break;
-                                }
-
-                                for (int j = 0; j < ListProductScan.size(); j++) {
-                                    if (ListProductScan.get(j).getTenSp().equals(getNameSp(data))) {
-                                        ListProductScan.get(j).setSoluong(ListProductScan.get(j).getSoluong() + 1);
-                                        Apdater_Pay apdater_pay = new Apdater_Pay(Pay.this, R.layout.custom_listview, ListProductScan);
-                                        listViewProduct.setAdapter(apdater_pay);
-                                        break;
-                                    } else {
-                                        if (i == ListProductScan.size() - 1) {
-                                            Product product = new Product();
-                                            product.setMaSp(ListProductDB.get(j).getMaSp());
-                                            product.setTenSp(ListProductDB.get(j).getTenSp());
-                                            product.setGia(ListProductDB.get(j).getGia());
-                                            product.setCanNang(ListProductDB.get(j).getCanNang());
-                                            product.setSoluong(product.getSoluong() + 1);
-                                            ListProductScan.add(product);
-                                            Apdater_Pay apdater_pay = new Apdater_Pay(Pay.this, R.layout.custom_listview, ListProductScan);
-                                            listViewProduct.setAdapter(apdater_pay);
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        if(!ListProductScan.isEmpty()) {
-                            SumProduct = 0;
-                            SumScale = 0;
-                            int j = ListProductScan.size() - 1;
-                            while (j >= 0) {
-                                SumScale = SumScale + ListProductScan.get(j).getCanNang();
-                                SumProduct = SumProduct + ListProductScan.get(j).getThanhTien();
-                                j--;
-
-                            }
-                            numberPay.setText(SumProduct + " VNĐ");
-                            numberScale.setText(SumScale + "gram");
-                        }
-                    }
-                });
-            }
-
-            public String getNameSp(String data){
-                for(int i = 0; i < ListProductDB.size(); i++){
-                    if(ListProductDB.get(i).getMaSp().equals(data)){
-                        return ListProductDB.get(i).getTenSp();
-                    }
+                Log.e("TagIDbefore", data);
+                if (ListIDDatabase.contains(data.trim()) && !ListID.contains(data.trim())) {
+                    Log.e("TagID", data);
+                    ListID.add(data);
                 }
-                return "NULL";
             }
         };
     }
@@ -385,12 +324,12 @@ public class Pay extends AppCompatActivity {
                         Log.e("Nhan", "OK");
                         if (data.contains(".")) {
                             Log.e("Kg", data);
-                            if(Float.parseFloat(data) < SumScale+10 && Float.parseFloat(data) > SumScale -10) {
+                            if (Float.parseFloat(data) < SumScale + SumScale * 0.05 && Float.parseFloat(data) > SumScale - SumScale * 0.05) {
                                 confirm.setEnabled(true);
                                 confirm.setBackground(getDrawable(R.drawable.confirm_buy));
                                 Toast.makeText(Pay.this, "Cân Nặng Hợp LÝ", Toast.LENGTH_LONG).show();
                                 numberScale.setTextColor(getResources().getColor(R.color.Ok));
-                            }else {
+                            } else {
                                 Toast.makeText(Pay.this, "OK", Toast.LENGTH_LONG).show();
                                 numberScale.setTextColor(getResources().getColor(R.color.colorButtonConfirm));
                             }
@@ -409,10 +348,78 @@ public class Pay extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        try{
+        try {
             controllerBluetooth.disconnect();
-        }catch (Exception e){
+        } catch (Exception e) {
 
         }
+    }
+
+    public int getIndexListProductDB(String s) {
+        for (int i = 0; i < ListProductDB.size(); i++) {
+            if (ListProductDB.get(i).getMaSp().equals(s))
+                return i;
+        }
+        ;
+        return ListProductDB.size();
+    }
+
+    ;
+
+    public String getNameSp(String data) {
+        for (int i = 0; i < ListProductDB.size(); i++) {
+            if (ListProductDB.get(i).getMaSp().equals(data)) {
+                return ListProductDB.get(i).getTenSp();
+            }
+        }
+        return "NULL";
+    }
+
+
+    public int getIndexListProductScan(String s) {
+        for (int i = 0; i < ListProductScan.size(); i++) {
+            if (ListProductScan.get(i).getTenSp().equals(s))
+                return i;
+        }
+        ;
+        return ListProductScan.size();
+    }
+
+    public void ThanhToan() {
+        Log.e("size List", String.valueOf(ListID.size()));
+        for(int i = 0; i < ListID.size(); i++){
+            Log.e("ThamChieu", ListID.get(i));
+        }
+        for (int i = 0; i < ListID.size(); i++) {
+
+            Log.e("Vi Tri", String.valueOf(getIndexListProductDB(ListID.get(i))));
+            //if (getIndexListProductDB(ListID.get(i)) == ListProductDB.size()) return;
+
+            if (ListNameSP.contains(getNameSp(ListID.get(i)))) {
+                ListProductScan.get(getIndexListProductScan(getNameSp(ListID.get(i))))
+                        .setSoluong(ListProductScan.get(getIndexListProductScan(getNameSp(ListID.get(i)))).getSoluong() + 1);
+            }else {
+                Product product = new Product();
+                product.setMaSp(ListProductDB.get(getIndexListProductDB(ListID.get(i))).getMaSp());
+                product.setTenSp(ListProductDB.get(getIndexListProductDB(ListID.get(i))).getTenSp());
+                product.setGia(ListProductDB.get(getIndexListProductDB(ListID.get(i))).getGia());
+                product.setCanNang(ListProductDB.get(getIndexListProductDB(ListID.get(i))).getCanNang());
+                product.setSoluong(product.getSoluong() + 1);
+                ListProductScan.add(product);
+                ListNameSP.add(product.getTenSp());
+            }
+        }
+        Apdater_Pay apdater_pay = new Apdater_Pay(Pay.this, R.layout.custom_listview, ListProductScan);
+        listViewProduct.setAdapter(apdater_pay);
+
+        int j = ListProductScan.size() - 1;
+        while (j >= 0) {
+            SumScale = SumScale + ListProductScan.get(j).getCanNang();
+            SumProduct = SumProduct + ListProductScan.get(j).getThanhTien();
+            j--;
+
+        }
+        numberPay.setText(SumProduct + " VNĐ");
+        numberScale.setText(SumScale + "gram");
     }
 }

@@ -43,7 +43,7 @@ public class Import extends AppCompatActivity {
     Boolean status = false;
     LinearLayout cover;
     TextView cooldown;
-    String numberweight;
+    String numberweight = "0";
     Handler handler_try = new Handler();
 
 
@@ -163,11 +163,11 @@ public class Import extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 //
-                if (name.getText().toString().equals("") || price.getText().toString().equals("") || ID.getText().toString().equals("") || weight.getText().toString().equals("")) {
+                if (name.getText().toString().equals("") || price.getText().toString().equals("") || ID.getText().toString().trim().equals("") || weight.getText().toString().equals("")) {
                     Toast.makeText(Import.this, "Thông Tin Sản Phẩm Bị Thiếu", Toast.LENGTH_SHORT).show();
                 } else {
                     try {
-                        Cursor cursor = databaseUHF.getSANPHAM(ID.getText().toString());
+                        Cursor cursor = databaseUHF.getSANPHAM(ID.getText().toString().trim());
                         cursor.moveToNext();
                         cursor.getString(cursor.getColumnIndex(databaseUHF.KEY_NAME));
                     } catch (Exception e) {
@@ -176,9 +176,9 @@ public class Import extends AppCompatActivity {
 
                     if (status) {
                         Toast.makeText(Import.this, "Thêm Sản Phẩm Thành Công", Toast.LENGTH_SHORT).show();
-                        databaseUHF.createSANPHAM(ID.getText().toString(), name.getText().toString().trim(), price.getText().toString().trim(), numberweight);
+                        databaseUHF.createSANPHAM(ID.getText().toString().trim(), name.getText().toString().trim(), price.getText().toString().trim(), numberweight);
                     } else {
-                        Toast.makeText(Import.this, "ID " + ID.getText().toString() + " Đã Tồn Tại", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(Import.this, "ID " + ID.getText().toString().trim() + " Đã Tồn Tại", Toast.LENGTH_SHORT).show();
                     }
                     status = false; //tồn tại ID tron database
 
@@ -218,6 +218,7 @@ public class Import extends AppCompatActivity {
                     @Override
                     public void run() {
                         try {
+                            Log.e("TagID", data);
                             if (ID.getText().equals("")) {
 
                                 try {
@@ -230,7 +231,7 @@ public class Import extends AppCompatActivity {
 
                                 if (status) {
                                     Toast.makeText(Import.this, "Read Success", Toast.LENGTH_SHORT).show();
-                                    ID.setText(data);
+                                    ID.setText(data.trim());
                                 }
                                 status = false; //tồn tại ID tron database
                             }
