@@ -2,6 +2,8 @@
 #include <string.h>
 #include "esp_heap_caps.h"
 
+#define numberof(x) (sizeof((x))/sizeof((x)[0]))
+
 static SemaphoreHandle_t mutex;
 static TMR_Reader *rp;
 static TMR_ReadPlan plan;
@@ -10,11 +12,12 @@ TMR_Region region;
 TMR_TagOp tagop;
 
 static void checkerr(TMR_Reader* rp, TMR_Status ret, const char *msg);
+void printU32List(TMR_uint32List *list);
 
 void hwInit()
 {
     TMR_Status ret;
-    int readPower, writePower;
+    int readPower, writePower, temp;
     char str[64];
 
 	int tagCount;
@@ -37,7 +40,7 @@ void hwInit()
 	checkerr(rp, ret, "Getting current write power");
 	printf("readpower: %d, TMR_PARAM_RADIO_POWERMAX: %u\n", readPower, writePower);
 
-    readPower = 2000;
+    readPower = 2700;
     writePower = 0;
 
     ret = TMR_paramSet(rp, TMR_PARAM_RADIO_READPOWER, &readPower);
@@ -51,11 +54,77 @@ void hwInit()
 	ret = TMR_paramGet(rp, TMR_PARAM_RADIO_WRITEPOWER, &writePower);
 	checkerr(rp, ret, "Getting current write power");
 	printf("readpower: %d, writepower: %d\n", readPower, writePower);
+ 
+    // set tag encoding
+    TMR_GEN2_TagEncoding tag = TMR_GEN2_MILLER_M_4;
+ 
+    ret = TMR_paramSet(rp, TMR_PARAM_GEN2_TAGENCODING, &tag);
+    checkerr(rp, ret, "Setting tag encoding");
+ 
+    ret = TMR_paramGet(rp, TMR_PARAM_GEN2_TAGENCODING, &tag);
+    checkerr(rp, ret, "Getting tag encoding");
+    printf ("tag encoding: %d \r\n", tag);
+ 
+    // set Q value
+    TMR_GEN2_Q value ;
+    value.type = TMR_SR_GEN2_Q_DYNAMIC;
+    ret = TMR_paramSet(rp, TMR_PARAM_GEN2_Q, &value);
+    checkerr(rp, ret, "Setting q");
+ 
+    ret = TMR_paramGet(rp, TMR_PARAM_GEN2_Q, &value);
+    checkerr(rp, ret, "Getting q");
+    if (value.type == TMR_SR_GEN2_Q_DYNAMIC)
+    {
+      printf("DynamicQ\n");
+    }
+    else if (value.type == TMR_SR_GEN2_Q_STATIC)
+    {
+      printf("StaticQ(%d)\n", value.u.staticQ.initialQ);
+    }
+ 
+    // set session
+    TMR_GEN2_Session session = TMR_GEN2_SESSION_S0;
+ 
+    ret = TMR_paramSet(rp, TMR_PARAM_GEN2_SESSION, &session);
+    checkerr(rp, ret, "Setting session");
+ 
+    ret = TMR_paramGet(rp, TMR_PARAM_GEN2_SESSION, &session);
+    checkerr(rp, ret, "Getting session");
+    printf ("session: %d \r\n", session);
+ 
+ 
+    // set target
+    TMR_GEN2_Target target = TMR_GEN2_TARGET_A ;
+ 
+    ret = TMR_paramSet(rp, TMR_PARAM_GEN2_TARGET, &target);
+    checkerr(rp, ret, "Setting target");
+ 
+    ret = TMR_paramGet(rp, TMR_PARAM_GEN2_TARGET, &target);
+    checkerr(rp, ret, "Getting taget");
+    printf ("target: %d \r\n", target);
 
 	// set region support 868mhz
 	region = TMR_REGION_EU3;
 	ret = TMR_paramSet(rp, TMR_PARAM_REGION_ID, &region);
 	checkerr(rp, ret, "Setting region");
+
+    // change frequency hop table
+    uint32_t myList[1];
+    TMR_uint32List hopfreq;
+    hopfreq.max = 4;
+    hopfreq.list = myList;
+    hopfreq.len = 1;
+    myList[0] = 867000;
+ 
+    ret = TMR_paramSet(rp, TMR_PARAM_REGION_HOPTABLE, &hopfreq);
+    checkerr(rp, ret, "Setting hoptable");
+ 
+    hopfreq.max = numberof(myList);
+    hopfreq.list = myList;
+    
+    ret = TMR_paramGet(rp, TMR_PARAM_REGION_HOPTABLE, &hopfreq);
+    printU32List(&hopfreq);
+    putchar('\n');
 
 	// Create simple plan using antenna 1
 	ret = TMR_RP_init_simple(&plan, 1, &antennaList, TMR_TAG_PROTOCOL_GEN2, 1000);
@@ -85,8 +154,8 @@ void hwGetTag()
         xEventGroupWaitBits(eventGroup, GET_TAG, pdTRUE, pdFALSE, portMAX_DELAY);
 
         /* Commit read plan */
-        ret = TMR_paramSet(rp, TMR_PARAM_READ_PLAN, &plan);
-        checkerr(rp, ret, "commit read plan");
+        // ret = TMR_paramSet(rp, TMR_PARAM_READ_PLAN, &plan);
+        // checkerr(rp, ret, "commit read plan");
         xSemaphoreTake(mutex, portMAX_DELAY);
         while(1)
         {
@@ -94,7 +163,7 @@ void hwGetTag()
         	if ((uxBits & STOP_GET_TAG) == STOP_GET_TAG)
         		break;
             do {
-                ret = TMR_read(rp, 1000, &tagCount);
+                ret = TMR_read(rp, 100, &tagCount);
                 checkerr(rp, ret, "Reading reader");
                 printf ("++++++++++++++++++++++++++++++\r\n");
                 printf("+++tag count : %d ++++\n", tagCount);
@@ -116,7 +185,7 @@ void hwGetTag()
                 // printf("free heap: %d, largest heap: %d \r\n", esp_get_free_heap_size(), heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
 
                 ret = TMR_TRD_init_data(trd, buflen, dataBuf);
-                checkerr(rp, ret, "creating tag read data");
+                //checkerr(rp, ret, "creating tag read data");
 
                 trd->userMemData.list = dataBuf1;
                 trd->userMemData.max = buflen;
@@ -135,25 +204,14 @@ void hwGetTag()
                 trd->tidMemData.len = 0;
 
                 ret = TMR_getNextTag(rp, trd);
-                checkerr(rp, ret, "Next tag");
+                //checkerr(rp, ret, "Next tag");
                 
                 if (xQueueSend(getTagQueue,(void *)&trd,(TickType_t )0) == pdTRUE)
                 {
-                    printf("value sent on queue \n");
+                    // printf("value sent on queue \n");
                 } else printf("tag send queue error\n");
-
-                // TMR_bytesToHex(trd->tag.epc, trd->tag.epcByteCount, epcStr);
-                // printf("\necpstr: %s, freq: %d, Rssi: %d\n", epcStr, trd->frequency, trd->rssi );
-
-                // if (0 < trd->data.len)
-                // {
-                //     char dataStr[128];
-                //     printf ("len: %d, value: %d\r\n", trd->data.len, (int)trd->data.list);
-                //     TMR_bytesToHex(trd->data.list, trd->data.len, dataStr);
-                //     printf("  data(%d): %s\n", trd->data.len, dataStr);
-                // }
             }
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
+            // vTaskDelay(100 / portTICK_PERIOD_MS);
         }
 
         xSemaphoreGive(mutex);
@@ -216,4 +274,22 @@ void destroyTagdata(TMR_TagReadData *tagData)
 
         free (tagData);
     }
+}
+
+// helper function
+void printU32List(TMR_uint32List *list)
+{
+    int i;
+
+    putchar('[');
+    for (i = 0; i < list->len && i < list->max; i++)
+    {
+        printf("%d%s", list->list[i],
+            ((i + 1) == list->len) ? "" : ",");
+    }
+    if (list->len > list->max)
+    {
+        printf("...");
+    }
+    putchar(']');
 }
