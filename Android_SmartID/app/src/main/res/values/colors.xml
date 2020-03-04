@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#427ef5</color>
+    <color name="colorPrimaryDark">#000000</color>
+    <color name="colorAccent">#160670</color>
+    <color name="colorBackgrondToolBar">#427ef5</color>
+    <color name="colorTextToolBar">#ffffff</color>
+    <color name="colorTextTitle">#ffffff</color>
+    <color name="colorBackgroundTitle">#427ef5</color>
+    <color name="colorButtonConfirm">#ff0000</color>
+    <color name="colorButtonConfirm_sss">#55ff0000</color>
+    <color name="colorRefresh">#427ef5</color>
+    <color name="colorBackgroundRefresh">#ffffff</color>
+    <color name="colorIconWhilte">#ffffff</color>
+    <color name="colorTextWhite">#ffffff</color>
+    <color name="colorTextPrimary">#427ef5</color>
+    <color name="colorBackgroundContent">#f2f2f2</color>
+    <color name="Ok">#23ba4c</color>
+</resources>
