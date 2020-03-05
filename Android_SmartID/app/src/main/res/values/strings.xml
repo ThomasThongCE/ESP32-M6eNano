@@ -12,6 +12,7 @@
     <string name="Scale">Cân Nặng: </string>
     <string name="confirm">Xác Nhận Mua</string>
     <string name="ScanRIFD">Quét</string>
+    <string name="StopScanRIFD">Ngừng quét</string>
     <string name="ScanCan">Cân</string>
     <string name="Product">Sản Phẩm</string>
     <string name="CheckProduct">Kiểm Tra</string>

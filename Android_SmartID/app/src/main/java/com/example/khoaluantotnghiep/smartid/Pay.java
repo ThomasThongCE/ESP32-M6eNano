@@ -13,6 +13,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -28,7 +29,7 @@ import java.util.UUID;
 public class Pay extends AppCompatActivity {
     ListView listViewProduct;
     ArrayList<String> listProduct = new ArrayList<>();
-    Button scan;
+    Button scan, stopScan;
     Button confirm;
     Button scale;
     ImageButton clear;
@@ -61,7 +62,11 @@ public class Pay extends AppCompatActivity {
 
     Stack<String> stack = new Stack<String>();
     Handler updateUIHandler;
-    private static final Object lockObject = new Object();
+    CheckBox rawData;
+    TextView totalItems;
+    ArrayAdapter<String> rawDataAdapter ;
+    boolean rawAdapterType;
+    private static final Object lockObject = new Object(), rawFlagLock = new Object();
 
     @Override
     protected void onCreate(Bundle bundle) {
@@ -74,6 +79,8 @@ public class Pay extends AppCompatActivity {
 
         listViewProduct = findViewById(R.id.listProduct);
 
+        rawAdapterType = false;
+        rawDataAdapter = new ArrayAdapter<String>(Pay.this, R.layout.simple_listview, ListID);
         apdater_pay = new Apdater_Pay(Pay.this, R.layout.custom_listview, ListProductScan);
         listViewProduct.setAdapter(apdater_pay);
 
@@ -81,7 +88,18 @@ public class Pay extends AppCompatActivity {
             @Override
             public void handleMessage(Message msg) {
                 if(msg.what==UPDATE_LISTVIEW){
-                    apdater_pay.notifyDataSetChanged();
+                    boolean temp ;
+                    synchronized (rawFlagLock) {
+                        temp = rawAdapterType;
+                    }
+                    if (temp){
+                        totalItems.setText(String.valueOf(ListID.size()));
+                        rawDataAdapter.notifyDataSetChanged();
+                    } else {
+                        apdater_pay.notifyDataSetChanged();
+                        totalItems.setText(String.valueOf(ListProductScan.size()));
+                    }
+
                     Log.d(LOGTAG, "Update UI");
                 }
                 super.handleMessage(msg);
@@ -131,6 +149,7 @@ public class Pay extends AppCompatActivity {
             public void run() {
                 Log.d(LOGTAG, "Data process thread running");
                 try {
+                    boolean tempRawAdapterType;
                     while(true) {
                         synchronized (lockObject) {
                             if (stack.empty()) {
@@ -139,25 +158,30 @@ public class Pay extends AppCompatActivity {
                                 Log.d(LOGTAG, "Data process thread be notify");
                             }
                         }
+                        synchronized (rawFlagLock) {
+                            tempRawAdapterType = rawAdapterType;
+                        }
 
                         if (!stack.empty()) {
                             String data = stack.pop();
                             Log.d(LOGTAG, "data process: " + data);
-                            if (ListIDDatabase.contains(data.trim()) && !ListID.contains(data.trim())) {
+                            if ((ListIDDatabase.contains(data.trim()) || tempRawAdapterType) && !ListID.contains(data.trim())) {
                                 ListID.add(data);
 
-                                if (ListNameSP.contains(getNameSp(data))) {
-                                    ListProductScan.get(getIndexListProductScan(getNameSp(data)))
-                                            .setSoluong(ListProductScan.get(getIndexListProductScan(getNameSp(data))).getSoluong() + 1);
-                                } else {
-                                    Product product = new Product();
-                                    product.setMaSp(ListProductDB.get(getIndexListProductDB(data)).getMaSp());
-                                    product.setTenSp(ListProductDB.get(getIndexListProductDB(data)).getTenSp());
-                                    product.setGia(ListProductDB.get(getIndexListProductDB(data)).getGia());
-                                    product.setCanNang(ListProductDB.get(getIndexListProductDB(data)).getCanNang());
-                                    product.setSoluong(product.getSoluong() + 1);
-                                    ListProductScan.add(product);
-                                    ListNameSP.add(product.getTenSp());
+                                if (!tempRawAdapterType || ListIDDatabase.contains(data.trim())){
+                                    if (ListNameSP.contains(getNameSp(data))) {
+                                        ListProductScan.get(getIndexListProductScan(getNameSp(data)))
+                                                .setSoluong(ListProductScan.get(getIndexListProductScan(getNameSp(data))).getSoluong() + 1);
+                                    } else {
+                                        Product product = new Product();
+                                        product.setMaSp(ListProductDB.get(getIndexListProductDB(data)).getMaSp());
+                                        product.setTenSp(ListProductDB.get(getIndexListProductDB(data)).getTenSp());
+                                        product.setGia(ListProductDB.get(getIndexListProductDB(data)).getGia());
+                                        product.setCanNang(ListProductDB.get(getIndexListProductDB(data)).getCanNang());
+                                        product.setSoluong(product.getSoluong() + 1);
+                                        ListProductScan.add(product);
+                                        ListNameSP.add(product.getTenSp());
+                                    }
                                 }
 
                                 updateUI();
@@ -180,7 +204,7 @@ public class Pay extends AppCompatActivity {
             public void run() {
                 thread.run();
             }
-        }, 5000);
+        }, 1000);
 
         cover.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -191,7 +215,7 @@ public class Pay extends AppCompatActivity {
                     public void run() {
                         thread.run();
                     }
-                }, 5000);
+                }, 1000);
             }
         });
         confirm = findViewById(R.id.confirm);
@@ -230,10 +254,32 @@ public class Pay extends AppCompatActivity {
 
         numberPay.setText(SumProduct + " VNĐ");
         scan = findViewById(R.id.Scan);
+        stopScan = findViewById(R.id.StopScan);
         clear = findViewById(R.id.clear);
 
         numberScale = findViewById(R.id.numberScale);
         scale = findViewById(R.id.scale_button);
+
+        rawData = findViewById(R.id.rawdata);
+        totalItems = findViewById(R.id.totalItems);
+
+        rawData.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (((CheckBox) view).isChecked()) {
+                    synchronized (rawFlagLock) {
+                        rawAdapterType = true;
+                    }
+                    listViewProduct.setAdapter(rawDataAdapter);
+                } else {
+                    synchronized (rawFlagLock) {
+                        rawAdapterType = false;
+                    }
+                    listViewProduct.setAdapter(apdater_pay);
+                }
+                updateUI();
+            }
+        });
 
         scale.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -255,25 +301,37 @@ public class Pay extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 try {
-                    scan.setEnabled(false);
-                    scan.setBackground(getResources().getDrawable(R.drawable.background_content));
-                    scan.setText("Đang Quét... Vui Lòng Chờ");
+//                    scan.setEnabled(false);
+//                    scan.setBackground(getResources().getDrawable(R.drawable.background_content));
+//                    scan.setText("Đang Quét... Vui Lòng Chờ");
 
                     controllerBluetooth.sendData("a");
                 } catch (Exception e) {
                     Toast.makeText(Pay.this, "Press Scan Again", Toast.LENGTH_SHORT).show();
                 }
-                handler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-//                        dataProcess.interrupt();
-                        scan.setEnabled(true);
-                        scan.setText("Quét");
-                        scan.setBackground(getResources().getDrawable(R.drawable.button));
-                        Toast.makeText(Pay.this, "Quét Xong", Toast.LENGTH_SHORT).show();
-                        ThanhToan();
-                    }
-                }, 5000);
+//                handler.postDelayed(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        scan.setEnabled(true);
+//                        scan.setText("Quét");
+//                        scan.setBackground(getResources().getDrawable(R.drawable.button));
+//                        Toast.makeText(Pay.this, "Quét Xong", Toast.LENGTH_SHORT).show();
+//                        ThanhToan();
+//                    }
+//                }, 5000);
+            }
+        });
+
+        stopScan.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                try {
+                    controllerBluetooth.sendData("b");
+                    ThanhToan();
+                } catch (Exception e) {
+                    Toast.makeText(Pay.this, "Press Scan Again", Toast.LENGTH_SHORT).show();
+                }
+
             }
         });
 
@@ -300,16 +358,6 @@ public class Pay extends AppCompatActivity {
             public void onClick(View view) {
                 confirm.setEnabled(false);
                 confirm.setBackground(getDrawable(R.color.colorButtonConfirm_sss));
-                //ListProductDB.clear();
-                databaseUHF.open();
-                int i = ListID.size() - 1;
-
-                while (i >= 0) {
-                    Log.d("kha", "123");
-                    databaseUHF.deleteSANPHAM(ListID.get(i));
-                    i--;
-                }
-                databaseUHF.close();
 
                 cover.setVisibility(View.VISIBLE);
                 cooldown.setText("Thanh Toán Thành Công");
@@ -467,35 +515,14 @@ public class Pay extends AppCompatActivity {
         for(int i = 0; i < ListID.size(); i++){
             Log.e("ThamChieu", ListID.get(i));
         }
-        for (int i = 0; i < ListID.size(); i++) {
 
-            Log.e("Vi Tri", String.valueOf(getIndexListProductDB(ListID.get(i))));
-            //if (getIndexListProductDB(ListID.get(i)) == ListProductDB.size()) return;
+        int j = ListProductScan.size() - 1;
+        while (j >= 0) {
+            SumScale = SumScale + ListProductScan.get(j).getCanNang();
+            SumProduct = SumProduct + ListProductScan.get(j).getThanhTien();
+            j--;
 
-//            if (ListNameSP.contains(getNameSp(ListID.get(i)))) {
-//                ListProductScan.get(getIndexListProductScan(getNameSp(ListID.get(i))))
-//                        .setSoluong(ListProductScan.get(getIndexListProductScan(getNameSp(ListID.get(i)))).getSoluong() + 1);
-//            }else {
-//                Product product = new Product();
-//                product.setMaSp(ListProductDB.get(getIndexListProductDB(ListID.get(i))).getMaSp());
-//                product.setTenSp(ListProductDB.get(getIndexListProductDB(ListID.get(i))).getTenSp());
-//                product.setGia(ListProductDB.get(getIndexListProductDB(ListID.get(i))).getGia());
-//                product.setCanNang(ListProductDB.get(getIndexListProductDB(ListID.get(i))).getCanNang());
-//                product.setSoluong(product.getSoluong() + 1);
-//                ListProductScan.add(product);
-//                ListNameSP.add(product.getTenSp());
-//            }
         }
-//        Apdater_Pay apdater_pay = new Apdater_Pay(Pay.this, R.layout.custom_listview, ListProductScan);
-//        listViewProduct.setAdapter(apdater_pay);
-
-//        int j = ListProductScan.size() - 1;
-//        while (j >= 0) {
-//            SumScale = SumScale + ListProductScan.get(j).getCanNang();
-//            SumProduct = SumProduct + ListProductScan.get(j).getThanhTien();
-//            j--;
-//
-//        }
         numberPay.setText(SumProduct + " VNĐ");
         numberScale.setText(SumScale + "gram");
     }
