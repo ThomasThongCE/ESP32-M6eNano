@@ -29,6 +29,10 @@
 #define SPP_SHOW_SPEED 1
 #define SPP_SHOW_MODE SPP_SHOW_DATA    /*Choose show mode: show data or speed*/
 
+#define DEBOUNCE_TIME 5
+#define BTN_GPIO 19
+#define ESP_INTR_FLAG_DEFAULT 0
+
 //static const esp_spp_mode_t esp_spp_mode = ESP_SPP_MODE_CB;
 static const esp_spp_mode_t esp_spp_mode = ESP_SPP_MODE_CB;
 
@@ -39,14 +43,53 @@ static const esp_spp_sec_t sec_mask = ESP_SPP_SEC_AUTHENTICATE;
 static const esp_spp_role_t role_slave = ESP_SPP_ROLE_SLAVE;
 
 //Control RFID
-volatile uint32_t temp = 0;
-volatile uint8_t control, flag = true;
+volatile uint32_t temp = 0, debounceTimeout = 0;
+volatile uint8_t control, flag = true, lastValue = 1;
+portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 
 void getTag();
 void sendBluetoothString(char *data);
 void sendBluetoothData(uint32_t len, unsigned char*data);
 void sendBluetooth(uint32_t len, unsigned char* data);
 void endPackage();
+
+void IRAM_ATTR handleButtonInterrupt() {
+    portENTER_CRITICAL_ISR(&mux);
+    uint8_t curretnValue = gpio_get_level(BTN_GPIO);
+    uint32_t currentTime = xTaskGetTickCount();
+    // ets_printf("time cur: %d, last: %d, true/false: %d\r\n", currentTime, debounceTimeout, (currentTime - debounceTimeout) >= DEBOUNCE_TIME);
+    if ((currentTime - debounceTimeout) >= DEBOUNCE_TIME)
+    {
+        // if (lastValue != curretnValue)
+        // {
+        //     lastValue = curretnValue;
+        BaseType_t xHigherPriorityTaskWoken, xResult;
+
+        xHigherPriorityTaskWoken = pdFALSE;
+
+        if (lastValue == 0 )
+        {
+            xResult = xEventGroupSetBitsFromISR(eventGroup, STOP_GET_TAG, xHigherPriorityTaskWoken);
+            lastValue = 1;
+        }
+            
+        else 
+        {
+            xResult = xEventGroupSetBitsFromISR(eventGroup, GET_TAG, xHigherPriorityTaskWoken);
+            lastValue = 0;
+        }
+
+        if( xResult != pdFAIL )
+        {
+            portYIELD_FROM_ISR();
+        }
+        // ets_printf("---interrupt %d\r\n", lastValue);
+        // }
+    }
+    debounceTimeout = currentTime;
+
+    portEXIT_CRITICAL_ISR(&mux);    
+}
 
 static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
 {
@@ -171,7 +214,7 @@ void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
     return;
 }
 
-void InitDevice()
+void InitBluetooth()
 {
 	//Bluetooth//
 	esp_err_t ret = nvs_flash_init();
@@ -222,11 +265,18 @@ void InitDevice()
 void app_main()
 {
 	hwTaskInit();
-    InitDevice();
+    InitBluetooth();
+
+    gpio_pad_select_gpio(BTN_GPIO);
+    gpio_set_direction(BTN_GPIO, GPIO_MODE_INPUT);
+    gpio_set_pull_mode(BTN_GPIO, GPIO_PULLUP_ONLY);
+
+    gpio_set_intr_type(BTN_GPIO, GPIO_INTR_ANYEDGE);
+    gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
+    gpio_isr_handler_add(BTN_GPIO, handleButtonInterrupt, NULL);
 
     xTaskCreate(&getTag,"getTag",4096,NULL,10,NULL);
     // xEventGroupSetBits(eventGroup, GET_TAG);
-//    xEventGroupSetBits(eventGroup, GET_TAG);
 }
 
 void getTag()
@@ -248,19 +298,11 @@ void getTag()
             sendBluetoothString("\r\n");
             printf("ecpstr: %s, freq: %d, Rssi: %d\n", epcStr, trd->frequency, trd->rssi );
 
-            ESP_LOGD(DATA_TAG, "data len: %d\r\n", trd->data.len);
-            ESP_LOGD(DATA_TAG, "userMemData len: %d\r\n", trd->userMemData.len);
-            ESP_LOGD(DATA_TAG, "epcMemData len: %d\r\n", trd->epcMemData.len);
-            ESP_LOGD(DATA_TAG, "reservedMemData len: %d\r\n", trd->reservedMemData.len);
-            ESP_LOGD(DATA_TAG, "tidMemData len: %d\r\n", trd->tidMemData.len);
-
             printf("number of time tag read: %d\r\n", trd->readCount);
 
             if (0 < trd->data.len)
             {
-                ESP_LOGD(DATA_TAG, "inside data\r\n");
                 TMR_bytesToHex(trd->data.list, trd->data.len, dataStr);
-                ESP_LOGD(DATA_TAG, "  data(%d): %s\n", trd->data.len, dataStr);
 
                 sendBluetoothString("data: ");
                 sendBluetoothData(trd->data.len*2, (unsigned char *)dataStr);
@@ -269,9 +311,7 @@ void getTag()
 
             if (0 < trd->userMemData.len)
             {
-                ESP_LOGD (DATA_TAG, "inside userMemData \r\n");
                 TMR_bytesToHex(trd->userMemData.list, trd->userMemData.len, dataStr);
-                ESP_LOGD(DATA_TAG, "  userMemData(%d): %s\n", trd->userMemData.len, dataStr);
 
                 sendBluetoothString("userMemData: ");
                 sendBluetoothData(trd->userMemData.len*2, (unsigned char *)dataStr);
@@ -280,9 +320,7 @@ void getTag()
 
             if (0 < trd->epcMemData.len)
             {
-                ESP_LOGD (DATA_TAG, "inside epcMemData \r\n");
                 TMR_bytesToHex(trd->epcMemData.list, trd->epcMemData.len, dataStr);
-                ESP_LOGD(DATA_TAG, "  epcMemData(%d): %s\n", trd->epcMemData.len, dataStr);
 
                 sendBluetoothString("epcMemData: ");
                 sendBluetoothData(trd->epcMemData.len*2, (unsigned char *)dataStr);
@@ -291,9 +329,7 @@ void getTag()
 
             if (0 < trd->reservedMemData.len)
             {
-                ESP_LOGD (DATA_TAG, "inside reservedMemData \r\n");
                 TMR_bytesToHex(trd->reservedMemData.list, trd->reservedMemData.len, dataStr);
-                ESP_LOGD(DATA_TAG, "  reservedMemData(%d): %s\n", trd->reservedMemData.len, dataStr);
 
                 sendBluetoothString("reservedMemData: ");
                 sendBluetoothData(trd->reservedMemData.len*2, (unsigned char *)dataStr);
@@ -302,9 +338,7 @@ void getTag()
 
             if (0 < trd->tidMemData.len)
             {
-                ESP_LOGD (DATA_TAG, "inside tidmemdata \r\n");
                 TMR_bytesToHex(trd->tidMemData.list, trd->tidMemData.len, dataStr);
-                ESP_LOGD(DATA_TAG, "  tidMemData(%d): %s\n", trd->tidMemData.len, dataStr);
 
                 sendBluetoothString("tidMemData: ");
                 sendBluetoothData(trd->tidMemData.len*2, (unsigned char *)dataStr);
@@ -313,7 +347,7 @@ void getTag()
 
 			destroyTagdata(trd);
 
-            ESP_LOGD (DATA_TAG, "\r\n");
+            printf("\r\n\r\n");
 
             sendBluetoothString("\r\n\r\n");
             endPackage();

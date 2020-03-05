@@ -148,72 +148,85 @@ void hwGetTag()
     TMR_Status ret;
     int32_t tagCount;
     EventBits_t uxBits;
-
+ 
     while(1)
     {
         xEventGroupWaitBits(eventGroup, GET_TAG, pdTRUE, pdFALSE, portMAX_DELAY);
-
-        /* Commit read plan */
-        // ret = TMR_paramSet(rp, TMR_PARAM_READ_PLAN, &plan);
-        // checkerr(rp, ret, "commit read plan");
+ 
         xSemaphoreTake(mutex, portMAX_DELAY);
         while(1)
         {
-        	uxBits = xEventGroupWaitBits(eventGroup, STOP_GET_TAG, pdTRUE, pdFALSE, 0);
-        	if ((uxBits & STOP_GET_TAG) == STOP_GET_TAG)
-        		break;
-            do {
-                ret = TMR_read(rp, 100, &tagCount);
-                checkerr(rp, ret, "Reading reader");
-                printf ("++++++++++++++++++++++++++++++\r\n");
-                printf("+++tag count : %d ++++\n", tagCount);
-                printf ("++++++++++++++++++++++++++++++\r\n");
-            } while (tagCount == 0);
-
+            uxBits = xEventGroupWaitBits(eventGroup, STOP_GET_TAG, pdTRUE, pdFALSE, 0);
+            printf("bit %d\r\n", uxBits);
+            if ((uxBits & STOP_GET_TAG) == STOP_GET_TAG)
+            {
+                printf("stop\r\n");
+ 
+                break;
+            }
+                
+            ret = TMR_read(rp, 100, &tagCount);
+            checkerr(rp, ret, "Reading reader");
+            printf ("++++++++++++++++++++++++++++++\r\n");
+            printf("+++tag count : %d ++++\n", tagCount);
+            printf ("++++++++++++++++++++++++++++++\r\n");
+ 
+ 
             while (TMR_SUCCESS == TMR_hasMoreTags(rp))
             {
                 TMR_TagReadData *trd;
                 uint8_t *dataBuf, *dataBuf1, *dataBuf2, *dataBuf3, *dataBuf4, buflen = 255;
-
+ 
                 trd = (TMR_TagReadData *) malloc(sizeof(TMR_TagReadData));
                 dataBuf = (uint8_t *) malloc(sizeof(uint8_t)*buflen);
-                dataBuf1 = (uint8_t *) malloc(sizeof(uint8_t)*buflen);
-                dataBuf2 = (uint8_t *) malloc(sizeof(uint8_t)*buflen);
-                dataBuf3 = (uint8_t *) malloc(sizeof(uint8_t)*buflen);
-                dataBuf4 = (uint8_t *) malloc(sizeof(uint8_t)*buflen);
+                // dataBuf1 = (uint8_t *) malloc(sizeof(uint8_t)*buflen);
+                // dataBuf2 = (uint8_t *) malloc(sizeof(uint8_t)*buflen);
+                // dataBuf3 = (uint8_t *) malloc(sizeof(uint8_t)*buflen);
+                // dataBuf4 = (uint8_t *) malloc(sizeof(uint8_t)*buflen);
                 // printf("trd: %d, dataBuf: %d, dataBuf4: %d \r\n", (int)trd, (int)dataBuf, (int)dataBuf4);
                 // printf("free heap: %d, largest heap: %d \r\n", esp_get_free_heap_size(), heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
-
+ 
                 ret = TMR_TRD_init_data(trd, buflen, dataBuf);
-                //checkerr(rp, ret, "creating tag read data");
-
-                trd->userMemData.list = dataBuf1;
+                // checkerr(rp, ret, "creating tag read data");
+ 
+                trd->userMemData.list = NULL;
                 trd->userMemData.max = buflen;
                 trd->userMemData.len = 0;
-
-                trd->epcMemData.list = dataBuf2;
+ 
+                trd->epcMemData.list = NULL;
                 trd->epcMemData.max = buflen;
                 trd->epcMemData.len = 0;
-
-                trd->reservedMemData.list = dataBuf3;
+ 
+                trd->reservedMemData.list = NULL;
                 trd->reservedMemData.max = buflen;
                 trd->reservedMemData.len = 0;
-
-                trd->tidMemData.list = dataBuf4;
+ 
+                trd->tidMemData.list = NULL;
                 trd->tidMemData.max = buflen;
                 trd->tidMemData.len = 0;
-
+ 
                 ret = TMR_getNextTag(rp, trd);
-                //checkerr(rp, ret, "Next tag");
+                // checkerr(rp, ret, "Next tag");
                 
                 if (xQueueSend(getTagQueue,(void *)&trd,(TickType_t )0) == pdTRUE)
                 {
                     // printf("value sent on queue \n");
                 } else printf("tag send queue error\n");
+                // readcount += trd->readCount;
+                // TMR_bytesToHex(trd->tag.epc, trd->tag.epcByteCount, epcStr);
+                // printf("\necpstr: %s, freq: %d, Rssi: %d\n", epcStr, trd->frequency, trd->rssi );
+ 
+                // if (0 < trd->data.len)
+                // {
+                //     char dataStr[128];
+                //     printf ("len: %d, value: %d\r\n", trd->data.len, (int)trd->data.list);
+                //     TMR_bytesToHex(trd->data.list, trd->data.len, dataStr);
+                //     printf("  data(%d): %s\n", trd->data.len, dataStr);
+                // }
             }
             // vTaskDelay(100 / portTICK_PERIOD_MS);
         }
-
+ 
         xSemaphoreGive(mutex);
     }
 }
