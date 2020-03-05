@@ -1,6 +1,8 @@
 #include "m6e.h"
 #include <string.h>
 #include "esp_heap_caps.h"
+#include "soc/timer_group_struct.h"
+#include "soc/timer_group_reg.h"
 
 #define numberof(x) (sizeof((x))/sizeof((x)[0]))
 
@@ -148,6 +150,9 @@ void hwGetTag()
     TMR_Status ret;
     int32_t tagCount;
     EventBits_t uxBits;
+    TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+    TIMERG0.wdt_feed=1;
+    TIMERG0.wdt_wprotect=0;
  
     while(1)
     {
@@ -224,7 +229,7 @@ void hwGetTag()
                 //     printf("  data(%d): %s\n", trd->data.len, dataStr);
                 // }
             }
-            // vTaskDelay(100 / portTICK_PERIOD_MS);
+            // vTaskDelay(10 / portTICK_PERIOD_MS);
         }
  
         xSemaphoreGive(mutex);
@@ -242,7 +247,7 @@ void hwTaskInit()
     hwInit();
 
     printf("Create task\n");
-    xTaskCreate(&hwGetTag,"hwGetTag",10240,NULL,5,NULL);
+    xTaskCreate(&hwGetTag,"hwGetTag",10240,NULL,10,NULL);
 }
 
 void hwConfigPower()

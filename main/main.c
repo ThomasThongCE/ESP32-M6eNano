@@ -43,7 +43,7 @@ static const esp_spp_sec_t sec_mask = ESP_SPP_SEC_AUTHENTICATE;
 static const esp_spp_role_t role_slave = ESP_SPP_ROLE_SLAVE;
 
 //Control RFID
-volatile uint32_t temp = 0, debounceTimeout = 0;
+volatile uint32_t temp = NULL, debounceTimeout = 0;
 volatile uint8_t control, flag = true, lastValue = 1;
 portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 
@@ -109,7 +109,7 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
         break;
     case ESP_SPP_CLOSE_EVT:
         ESP_LOGI(SPP_TAG, "ESP_SPP_CLOSE_EVT");
-        temp = 0;
+        temp = NULL;
         break;
     case ESP_SPP_START_EVT:
         ESP_LOGI(SPP_TAG, "ESP_SPP_START_EVT");
@@ -386,7 +386,8 @@ void sendBluetooth(uint32_t len, unsigned char* data)
 {
     flag = false;
     if (NULL != temp)
+    {
         esp_spp_write(temp, len, data);
-
-    while (!flag);
+        while (!flag);
+    }
 }

@@ -17,7 +17,7 @@ EventGroupHandle_t eventGroup ;
 enum eventBit 
 {
     GET_TAG = 1,
-    WRITE_TAG, 
-    STOP_GET_TAG, 
-    POWER,
+    WRITE_TAG = 2, 
+    STOP_GET_TAG = 4, 
+    POWER = 8,
 };
