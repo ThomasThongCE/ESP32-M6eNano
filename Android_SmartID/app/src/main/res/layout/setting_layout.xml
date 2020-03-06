@@ -32,4 +32,15 @@
         android:text="XÓA DATA BASE"
         android:background="@drawable/button"
         android:textColor="@color/colorTextWhite" />
+
+    <Button
+        android:layout_marginTop="10dp"
+        android:id="@+id/asd"
+        android:layout_marginLeft="40dp"
+        android:layout_marginRight="40dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Thêm Database"
+        android:background="@drawable/button"
+        android:textColor="@color/colorTextWhite" />
 </LinearLayout>

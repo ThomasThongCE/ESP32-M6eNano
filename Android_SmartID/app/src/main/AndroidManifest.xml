@@ -24,10 +24,10 @@
         </activity>
         <activity android:name=".FunctionApp"></activity>
         <activity android:name=".Pay"></activity>
+        <activity android:name=".Setting_app"></activity>
         <activity android:name=".Import"></activity>
         <activity android:name=".Check"></activity>
         <activity android:name=".main_scale"></activity>
-        <activity android:name=".Setting_app"></activity>
     </application>
 
 </manifest>

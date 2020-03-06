@@ -300,31 +300,19 @@ public class Pay extends AppCompatActivity {
         scan.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                scan.setText("Đang Quét...");
                 try {
-//                    scan.setEnabled(false);
-//                    scan.setBackground(getResources().getDrawable(R.drawable.background_content));
-//                    scan.setText("Đang Quét... Vui Lòng Chờ");
-
                     controllerBluetooth.sendData("a");
                 } catch (Exception e) {
                     Toast.makeText(Pay.this, "Press Scan Again", Toast.LENGTH_SHORT).show();
                 }
-//                handler.postDelayed(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        scan.setEnabled(true);
-//                        scan.setText("Quét");
-//                        scan.setBackground(getResources().getDrawable(R.drawable.button));
-//                        Toast.makeText(Pay.this, "Quét Xong", Toast.LENGTH_SHORT).show();
-//                        ThanhToan();
-//                    }
-//                }, 5000);
             }
         });
 
         stopScan.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
+                scan.setText("Quét");
                 try {
                     controllerBluetooth.sendData("b");
                     ThanhToan();
@@ -339,7 +327,7 @@ public class Pay extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 numberPay.setText("0 VNĐ");
-                numberScale.setText("0 Kg");
+                numberScale.setText("0 gram");
                 SumScale = 0;
                 SumProduct = 0;
                 listProduct.clear();
@@ -347,9 +335,9 @@ public class Pay extends AppCompatActivity {
                 ListNameSP.clear();
                 ListProductScan.clear();
                 updateUI();
-//                ArrayAdapter adapter = new ArrayAdapter(Pay.this, android.R.layout.simple_list_item_1, listProduct);
-//                listViewProduct.setAdapter(adapter);
-
+                confirm.setEnabled(false);
+                confirm.setBackground(getDrawable(R.color.colorButtonConfirm_sss));
+                numberScale.setTextColor(getColor(R.color.colorTextWhite));
             }
         });
 
@@ -452,16 +440,13 @@ public class Pay extends AppCompatActivity {
                             if (Float.parseFloat(data) < SumScale + SumScale * 0.05 && Float.parseFloat(data) > SumScale - SumScale * 0.05) {
                                 confirm.setEnabled(true);
                                 confirm.setBackground(getDrawable(R.drawable.confirm_buy));
-                                Toast.makeText(Pay.this, "Cân Nặng Hợp LÝ", Toast.LENGTH_LONG).show();
                                 numberScale.setTextColor(getResources().getColor(R.color.Ok));
                             } else {
-                                Toast.makeText(Pay.this, "OK", Toast.LENGTH_LONG).show();
                                 numberScale.setTextColor(getResources().getColor(R.color.colorButtonConfirm));
                             }
                             scale.setEnabled(true);
                             scale.setText("Cân Kiểm Tra");
                             scale.setBackground(getResources().getDrawable(R.drawable.button));
-                            Toast.makeText(Pay.this, "Kiểm Tra Cân Nặng Xong", Toast.LENGTH_SHORT).show();
                             controllerBluetooth_Scale.disconnect();
                         }
                     }
@@ -510,20 +495,23 @@ public class Pay extends AppCompatActivity {
         return ListProductScan.size();
     }
 
+    int index = 0;
     public void ThanhToan() {
-        Log.e("size List", String.valueOf(ListID.size()));
-        for(int i = 0; i < ListID.size(); i++){
-            Log.e("ThamChieu", ListID.get(i));
-        }
+//        Log.e("size List", String.valueOf(ListID.size()));
+//        for(int i = 0; i < ListID.size(); i++){
+//            Log.e("ThamChieu", ListID.get(i));
+//        }
 
         int j = ListProductScan.size() - 1;
-        while (j >= 0) {
+        while (j >= index) {
             SumScale = SumScale + ListProductScan.get(j).getCanNang();
             SumProduct = SumProduct + ListProductScan.get(j).getThanhTien();
             j--;
 
         }
+
+        index = ListProductScan.size();
         numberPay.setText(SumProduct + " VNĐ");
-        numberScale.setText(SumScale + "gram");
+        numberScale.setText(SumScale + " gram");
     }
 }

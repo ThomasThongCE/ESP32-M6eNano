@@ -113,6 +113,7 @@
             android:orientation="horizontal">
 
             <Button
+                android:layout_marginRight="2dp"
                 android:id="@+id/Scan"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -123,12 +124,13 @@
                 android:textColor="@color/colorTextWhite"
                 android:textStyle="bold" />
             <Button
+                android:layout_marginLeft="2dp"
                 android:id="@+id/StopScan"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:layout_weight="1"
-                android:background="@color/colorButtonConfirm_sss"
+                android:background="@drawable/button_stop"
                 android:text="@string/StopScanRIFD"
                 android:textColor="@color/colorTextWhite"
                 android:textStyle="bold" />
@@ -182,7 +184,7 @@
                 android:layout_marginRight="10dp"
                 android:layout_weight="3"
                 android:gravity="center|right"
-                android:text="0 Kg"
+                android:text="0 gram"
                 android:textColor="@color/colorTextWhite"
                 android:textSize="15sp"
                 android:textStyle="bold" />

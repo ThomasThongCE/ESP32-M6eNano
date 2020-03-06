@@ -152,7 +152,7 @@ public class Import extends AppCompatActivity {
                     controllerBluetooth.sendData("a");
                     Toast.makeText(Import.this, "Reading...", Toast.LENGTH_SHORT).show();
                 } catch (Exception e) {
-                    Toast.makeText(Import.this, "Reading Fail", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(Import.this, "Read Fail", Toast.LENGTH_SHORT).show();
                     controllerBluetooth.disconnect();
                     finish();
                 }
@@ -220,7 +220,6 @@ public class Import extends AppCompatActivity {
                         try {
                             Log.e("TagID", data);
                             if (ID.getText().equals("")) {
-
                                 try {
                                     Cursor cursor = databaseUHF.getSANPHAM(data);
                                     cursor.moveToNext();
@@ -230,7 +229,7 @@ public class Import extends AppCompatActivity {
                                 }
 
                                 if (status) {
-                                    Toast.makeText(Import.this, "Read Success", Toast.LENGTH_SHORT).show();
+                                    controllerBluetooth.sendData("b");
                                     ID.setText(data.trim());
                                 }
                                 status = false; //tồn tại ID tron database
